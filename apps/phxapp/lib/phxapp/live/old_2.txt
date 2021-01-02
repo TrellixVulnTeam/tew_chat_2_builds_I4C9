@@ -1,0 +1,378 @@
+defmodule Phxapp.ChatLive do
+  use Phxapp, :live_view
+  alias DB.{Interface, Users, Users_Chats, Messages}
+  alias Phxapp.{ RenderMainScreen, RenderFakeChat, RenderRealChat, ChatListObject, PrivateChat, FakeChat, GroupChat}
+  import Ecto.Query
+  require Logger
+
+  ################ General & System ####################
+
+  def mount(_params, session, socket) do
+    ## Test Input
+
+    ########
+    %{id: user_id, username: username } = Map.get(session, "current_user")
+    current_user = Interface.get_user(user_id)
+    render_screen_type = %RenderMainScreen{}
+
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Phxapp.PubSub, "user:#{user_id}")
+    end
+
+    old_data = Interface.get_old_data(user_id)
+    chat_list_objects = build_chat_list_objects(old_data.chats_data, old_data.contacts)
+
+    socket = assign(socket, old_data: old_data, user_id: user_id, username: username, new_data: %{}, chat_list_objects: chat_list_objects, current_chat_object: nil, current_user: current_user
+    )
+
+    socket = assign(socket, render_screen_type: render_screen_type)
+
+    {:ok, socket}
+  end
+
+  def terminate(_reason, state) do
+    IO.inspect "Terminating"
+    case Interface.shutdown_sequence(state) do
+    {:ok, message} -> IO.inspect message
+    {:error, message} -> IO.inspect message
+    end
+    IO.inspect "Have a Nice Day :)"
+  end
+
+
+  ##############################################################
+
+  ############# Setup Chats ####################
+
+  def build_chat_list_objects( real_chats_list, contacts ) do
+
+    real_chat_list = Enum.map(real_chats_list, fn c ->
+      build_real_chat_list_object(c)
+    end)
+
+    ##########
+    private_chats = Enum.filter(real_chat_list, fn c ->
+      c.chat_item_type == %PrivateChat{}
+    end)
+    user_ids_real_private_chats = Enum.map(private_chats, fn c ->
+      [recipient] = c.other_participants
+      recipient.id
+    end)
+    ###########
+
+    contacts_without_chats = Enum.filter(contacts, fn c ->
+      c.id not in user_ids_real_private_chats
+    end)
+
+    fake_chat_list = Enum.map(contacts_without_chats, fn c ->
+      build_fake_chat_list_object(c)
+    end)
+
+    ##########
+
+    total_chat_list = real_chat_list ++ fake_chat_list
+
+    total_chat_list
+      |> Enum.with_index()
+      |> Enum.map( fn {c, i} ->
+        %ChatListObject{ c | chat_list_id: i}
+      end)
+
+  end
+
+  def build_real_chat_list_object(chat) do
+
+    %{chat_object: chat_object, messages: messages, other_participants: participants} = chat
+
+    user_id = String.to_integer(socket.assigns.user_id)
+
+    IO.inspect "This is chat_object"
+    IO.inspect chat_object
+    IO.inspect "1111111111222222222"
+    chat_type_struct =
+        case chat_object.chat_type do
+          "private" -> %PrivateChat{}
+          "group" -> %GroupChat{}
+        end
+
+    local_chat_name =
+         case chat_object.chat_type do
+           "private" ->
+            recipient_query = from uc in Users_Contacts,
+            where: uc.chats_id == ^chat_object.id,
+            join: u in Users,
+            on: u.id == uc.users_id and u.id != ^user_id,
+            select: u
+            [recipient_object] = Interface.get_all_query(recipient_query)
+
+            recipient_object.username
+           "group" -> "Standard Group Name"
+        end
+
+    chat_list_object = %ChatListObject{
+      chat_list_id: 0, chat_item_type: chat_type_struct,
+      chat_object: chat_object, local_chat_name: local_chat_name, chat_name: chat_object.chat_name,
+      other_participants: participants, messages: messages, unseen_message: true
+    }
+    IO.inspect "This is a chat_list_object"
+    IO.inspect chat_list_object
+    IO.inspect "3333333333333"
+    chat_list_object
+  end
+
+  def build_fake_chat_list_object(contact) do
+    %ChatListObject{
+      chat_list_id: 0, chat_item_type: %FakeChat{},
+      chat_object: nil, local_chat_name: contact.username, chat_name: contact.username,
+      other_participants: [contact], messages: [], unseen_message: false, target_if_private_chat: contact
+    }
+  end
+
+  def reorder_chat_list_objects_by_my_most_recent_sent_message() do
+    IO.inspect "Shouldn't Actually Need This"
+  end
+
+  ###### Handling Chat List Interaction  #######
+
+  def handle_event("chat_tab_clicked", %{"chat_list_id" => chat_list_id}, socket ) do
+  #  IO.inspect "Hello! :) #{chat_list_id}"
+    current_chat_object = Enum.find(socket.assigns.chat_list_objects, fn c ->
+      c.chat_list_id == String.to_integer(chat_list_id)
+    end)
+
+    current_chat_object = Map.put(current_chat_object, :unseen_message, false )
+    socket = assign(socket, render_screen_type: %RenderRealChat{}, current_chat_object: current_chat_object)
+    {:noreply, socket}
+  end
+
+  def handle_event("send_button_clicked", %{"msg_text" => msg_text}, socket) do
+
+    %{current_chat_object: current_chat_object, user_id: user_id} = socket.assigns
+   # IO.inspect "Message Sending :)"
+
+    case current_chat_object.chat_item_type.value do
+      #FAKE CHAT - So, let's create a Real PRIVATE One :)
+      -1 ->
+        # Create Chat and Enter into DB
+        # Swap Real Chat into Chat Tab List - ReRENDER Dom
+        # Alert Other Users of new chat creation - So they ReRENDER DOM, too
+
+        #NOTE!!! 'chat_type' has to be "private" - cause that's just how it is in the DB
+
+      ## ALL I HAVE TO DO TO MAKE A GROUP CHAT IS MAKE A FUNCTION WHERE a Chat List Object IS created and SET as the CURRENT CHAT OBJECT! :)
+     # IO.inspect "Debug 1"
+      socket =
+      case length(current_chat_object.other_participants) do
+          1 -> initiate_new_chat_then_render_and_broadcast(user_id, current_chat_object, "private", msg_text, socket)
+          x when x > 1 ->  initiate_new_chat_then_render_and_broadcast(user_id, current_chat_object, "group", msg_text, socket)
+      end
+     # IO.inspect "Debug 1_a"
+    {:noreply, socket}
+
+    #REAL, ALREADY EXISTING chat - Let's send the message :)
+    x when x > 0 ->
+
+    # Send Message! :)))) #
+    initiate_new_message_then_render_and_broadcast(current_chat_object, %{msg_text: msg_text}, socket)
+
+    {:noreply, socket}
+
+    end
+
+  end
+
+  def handle_event(%{event: "incoming_message", payload: %{chat_id: chats_id, sender_id: _sender_id, message_struct: message_struct } =_incoming_message_object }, socket) do
+
+    current_chat_list_objects = socket.assigns.chat_list_objects
+    [chat_list_object] = Enum.filter( current_chat_list_objects, fn c ->
+      c.chat_object.id == chats_id
+    end  )
+
+    chat_list_object = Map.put( chat_list_object, :messages, [ chat_list_object.messages | message_struct ] )
+
+    chat_list_object = Map.put( chat_list_object, :unseen_message, true )
+
+    trimmed_chat_list_objects = Enum.reject( current_chat_list_objects, fn c ->
+      c.chat_object.id == chats_id
+    end  )
+
+    new_chat_list_objects = [chat_list_object | trimmed_chat_list_objects ]
+
+    socket = assign(socket, :chat_list_objects, new_chat_list_objects )
+    {:noreply, socket}
+  end
+
+  def handle_info( %{event: "new_chat", payload: %{new_chat_struct: new_chat_struct, sender_struct: sender_struct } }, socket) do
+    IO.inspect "Handle Event New Chat"
+
+    new_chat_struct = Map.put(new_chat_struct, :chat_name, sender_struct.username)
+
+    chat_list_object_setup_info = build_chat_list_object_setup_info_from_chat_struct(new_chat_struct, socket)
+    chat_list_object = build_real_chat_list_object(chat_list_object_setup_info)
+
+    old_chat_list = socket.assigns.chat_list_objects
+
+    IO.inspect "Built New Chat Object Based On Received Struct"
+    IO.inspect chat_list_object
+    IO.inspect "!!!!!!!!!!!!"
+
+    current_chat_object = socket.assigns.current_chat_object
+
+    IO.inspect "Current Chat Object"
+    IO.inspect current_chat_object
+    IO.inspect "!!!!!!!!!!!!"
+
+    new_chat_objects_list =
+        case chat_list_object.chat_item_type do
+          %PrivateChat{} ->
+
+            trimmed_chat_object_list =  Enum.reject(old_chat_list, fn co ->
+                IO.inspect "This is co"
+                IO.inspect co
+                "!!!!!!!!!!!!"
+                co.chat_item_type == %FakeChat{} and co.target_if_private_chat.id == sender_struct.id
+              end)
+            IO.inspect "Made It This Far 1"
+            IO.inspect trimmed_chat_object_list
+            IO.inspect "444444444444444444"
+            id_list = Enum.map(trimmed_chat_object_list, fn c -> c.chat_list_id end)
+            highest_list_id =
+              case length(id_list) do
+                0 -> 0
+                x when x > 0 -> Enum.max(id_list)
+              end
+
+              IO.inspect "Made It This Far 2"
+              IO.inspect highest_list_id
+              IO.inspect "5555555555555555555"
+
+              chat_list_object = Map.put(chat_list_object, :chat_list_id,
+                highest_list_id + 1 )
+
+                IO.inspect "Made It This Far 3"
+                IO.inspect chat_list_object
+                IO.inspect "666666666666666"
+
+
+              [chat_list_object | trimmed_chat_object_list ]
+
+          #NOTTTTTEE!!!!! Give Group Chat a chat_list_id of length(list) + 1
+
+          %GroupChat{} ->
+
+            id_list = Enum.map(old_chat_list, fn c -> c.chat_list_id end)
+            highest_list_id =
+              case length(id_list) do
+                0 -> 0
+                x when x > 0 -> Enum.max(id_list)
+
+              end
+
+            chat_list_object = Map.put(chat_list_object, :chat_list_id,
+            highest_list_id + 1 )
+
+          [chat_list_object | old_chat_list ]
+
+
+        end
+
+    socket = assign(socket, chat_list_objects: new_chat_objects_list )
+
+    {:noreply, socket}
+  end
+
+  def build_chat_list_object_setup_info_from_chat_struct(new_chat_struct, socket) do
+
+    current_user_id = socket.assigns.user_id
+    other_participants_query = from uc in Users_Chats,
+                               where: uc.chats_id == ^new_chat_struct.id and uc.users_id != ^current_user_id,
+                               join: u in Users,
+                               on: u.id == uc.users_id,
+                               select: u
+    other_participants = Interface.get_all_query(other_participants_query)
+
+    messages_query = from m in Messages,
+                     where: m.chats_id == ^new_chat_struct.id,
+                     select: m
+
+    messages = Interface.get_all_query(messages_query)
+
+    %{chat_object: new_chat_struct, messages: messages, other_participants: other_participants}
+
+  end
+
+  def initiate_new_chat_then_render_and_broadcast(user_id, current_chat_object, chat_type, msg_text, socket) do
+
+
+    {created_chat_struct, created_message} = Interface.initiate_new_chat(user_id, current_chat_object.other_participants, chat_type, current_chat_object.chat_name, [%{msg_text: msg_text}])
+
+
+    new_chat_list_object = build_real_chat_list_object(
+      %{chat_object: created_chat_struct, messages: [created_message], other_participants: current_chat_object.other_participants}
+    )
+
+    old_chat_list_objects = socket.assigns.chat_list_objects
+
+    trimmed_chat_list_objects =
+        old_chat_list_objects
+        |> Enum.reject(fn c ->
+          c.chat_list_id == current_chat_object.chat_list_id
+        end)
+
+
+
+        id_list = Enum.map(trimmed_chat_list_objects, fn c -> c.chat_list_id end)
+        highest_list_id =
+              case length(id_list) do
+                0 -> 0
+                x when x > 0 -> Enum.max(id_list)
+
+              end
+
+        new_chat_list_object = Map.put(new_chat_list_object, :chat_list_id, highest_list_id + 1 )
+
+    socket = assign(socket, current_chat_object: new_chat_list_object, chat_list_objects: [ new_chat_list_object | trimmed_chat_list_objects ])
+
+    ## Notify Other Users of Chat Creation
+    sender_struct = socket.assigns.current_user
+    Enum.each(new_chat_list_object.other_participants, fn p ->
+    Phxapp.Endpoint.broadcast("user:#{p.id}", "new_chat", %{new_chat_struct: created_chat_struct, sender_struct: sender_struct })
+    end)
+
+    socket
+  end
+
+  def initiate_new_message_then_render_and_broadcast(current_chat_object, %{msg_text: msg_text}, socket) do
+
+    chats_id = current_chat_object.chat_object.id
+    sender_id = socket.assigns.user_id
+    msg_body = %{msg_text: msg_text}
+    params = %{chats_id: chats_id, msg_body: msg_body, sender_id: sender_id}
+
+    message_struct = Interface.initiate_new_message(params)
+    current_chat_object_messages = current_chat_object.messages
+    new_current_chat_object_messages = [ current_chat_object_messages | message_struct ]
+    new_chat_object = Map.put(current_chat_object, :messages, new_current_chat_object_messages )
+
+    chat_list_objects = socket.assigns.chat_list_objects
+    new_chat_list_objects = Enum.reject(chat_list_objects, fn co ->
+      co.chat_list_id == new_chat_object.chat_list_id
+    end)
+
+    new_chat_list_objects = [new_chat_object | new_chat_list_objects ]
+
+    socket = assign(socket, chat_list_objects: new_chat_list_objects, current_chat_object: new_chat_object )
+
+    payload = %{chat_id: chats_id, sender_id: sender_id, message_struct: message_struct }
+
+    other_participants = new_chat_object.other_participants
+
+    Enum.each( other_participants , fn p ->
+      Phxapp.Endpoint.broadcast("user:#{p.id}", "incoming_message", payload )
+    end)
+
+    {:noreply, socket}
+  end
+
+
+end

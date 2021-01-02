@@ -1,0 +1,16 @@
+defmodule Phxapp.ChatListObject do
+  alias __MODULE__
+  alias Phxapp.{FakeChat}
+
+  @enforce_keys [:chat_list_id, :chat_item_type, :chat_object, :local_chat_name, :chat_name, :other_participants, :messages, :unseen_message ]
+  defstruct [ chat_list_id: nil, chat_item_type: %FakeChat{}, chat_object: nil, local_chat_name: "",chat_name: "", other_participants: [], messages: [], unseen_message: false, target_if_private_chat: nil ]
+
+  #Chats fetched from DB - %{chat_object: chat_object, messages: messages, other_participants: participants }
+
+  #'Fake Chats' made from Missing Contacts - %{chat_name: c.username, chat_type: "private", id: -1, inserted_at: c.inserted_at, updated_at: c.updated_at, other_participants: [c]}
+
+  def new(chat_list_id, chat_item_type, contact_object, chat_object, local_chat_name, chat_name, other_participants, messages, unseen_message, target_if_private_chat) do
+    %__MODULE__{chat_list_id: chat_list_id, chat_item_type: chat_item_type, contact_object: contact_object, chat_object: chat_object, local_chat_name: local_chat_name, chat_name: chat_name, other_participants: other_participants, messages: messages, unseen_message: false, target_if_private_chat: nil }
+  end
+
+end

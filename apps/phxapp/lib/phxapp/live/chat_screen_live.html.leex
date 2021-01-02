@@ -1,0 +1,43 @@
+
+         <div class="main_chat_area">
+
+            <!-- Inner Begin -->
+            <div class="inner">
+
+
+             <%= for message <- @current_chat_object.messages do %>
+
+               <div class="message_row">
+
+
+
+                      <div class="message <%= Phxapp.ChatScreenLive.message_class(message.sender_id, @user_id) %>" >
+
+                                 <div class="message_item <%= Phxapp.ChatScreenLive.message_class(message.sender_id, @user_id) %> ">
+                               <%= message.msg_text %>
+                                 </div>
+
+                     </div>
+
+
+               </div>
+
+
+
+            <% end %>
+
+
+            </div>
+            <!-- Inner end -->
+
+         </div>
+
+
+         <div class="keyboard_area">
+
+            <form class="keyboard_area_form" phx-submit="send_button_clicked">
+            <input type="text" name="msg_text">
+            <button> Send </button>
+            </form>
+
+         </div>

@@ -1,0 +1,246 @@
+defmodule Phxapp.ChatLive do
+  use Phxapp, :live_view
+  alias DB.{Interface, Users}
+  alias Phxapp.{ RenderMainScreen, RenderFakeChat, RenderRealChat}
+  import Ecto.Query
+  require Logger
+
+  ################ General & System ####################
+
+  def mount(_params, session, socket) do
+    ## Test Input
+
+    ########
+    current_user = Map.get(session, "current_user")
+    user_id = current_user.id
+    username = current_user.username
+
+    render_screen_type = %RenderMainScreen{}
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Phxapp.PubSub, "user:#{user_id}")
+
+    end
+
+
+    old_data = Interface.get_old_data(user_id)
+    chat_objects = load_chat_objects( user_id, old_data.chats_data )
+
+
+    socket = assign(socket, old_data: old_data, user_id: user_id, username: username, new_data: %{}, chat_objects: chat_objects, chat_screen_type: 0, chat_data: nil,
+    render_screen_type: render_screen_type
+    )
+
+
+
+    #temporary_assigns = [old_data: put_in(old_data, [:chats_data], []) ]
+
+    {:ok, socket}
+  end
+
+  def terminate(_reason, state) do
+    IO.inspect "Terminating"
+    case Interface.shutdown_sequence(state) do
+    {:ok, message} -> IO.inspect message
+    {:error, message} -> IO.inspect message
+    end
+    IO.inspect "Have a Nice Day :)"
+  end
+
+
+  ##############################################################
+
+  ############# Setup Chats ####################
+
+  def check_all_contacts_have_chat_objects(user_id, chats_data) do
+
+    recipients = Enum.map(chats_data, fn c ->
+      chat_object = c.chat_object
+      recipient =
+        if chat_object.chat_type == "private" do
+        [recipient] = Enum.filter(c.participants, fn p ->
+          p.id != user_id
+        end)
+        recipient
+      end
+      recipient
+    end)
+
+    recipient_ids = Enum.map(recipients, fn r ->
+      r.id
+    end)
+
+    all_contacts = Interface.all_contacts_for_user(user_id)
+
+    missing_contacts = Enum.filter(all_contacts, fn c ->
+        c.id not in recipient_ids
+      end)
+    missing_contacts
+  end
+
+  def load_chat_objects(user_id, chats_data) do
+    ## Chat_Object is an object from the database
+    missing_contacts = check_all_contacts_have_chat_objects(user_id, chats_data)
+
+    fake_chat_objects =
+      Enum.map( missing_contacts, fn c ->
+        %{chat_name: c.username, chat_type: "private", id: -1, inserted_at: c.inserted_at, updated_at: c.updated_at,
+        participants: [c]
+      }
+      end)
+
+    total_chat_objects = chats_data ++ fake_chat_objects
+
+    total_chat_objects =
+      total_chat_objects
+      |> Enum.with_index
+      |> Enum.map( fn {c, i} ->
+
+      Map.put(c, :chat_list_id, i + 1 )
+    end)
+
+    total_chat_objects
+
+  end
+
+  ########## Handling Messages ##################
+
+  def handle_event("send_button_clicked", %{"msg_body" => msg_body}, socket) do
+    IO.inspect "Send Button Clicked :)"
+
+    {:noreply, socket}
+  end
+
+
+  def handle_event("send_button_clicked_original", %{"msg_body" => msg_body}, socket) do
+    %{user_id: user_id, chat_data: chat_data} = socket.assigns
+    #chat_data = socket.assigns.chat_data
+    chat_screen_type = socket.assigns.chat_screen_type
+    case chat_screen_type do
+      -1 ->
+
+        IO.inspect "Start a New Chat :)"
+        initial_messages = [%{msg_text: msg_body, received: false, seen: false}]
+        #user_id = socket.assigns.user_id
+
+        participants = chat_data.participants
+        [recipient] = participants
+
+
+        initiated_chat = initiate_new_chat(user_id, participants, "private", recipient.username, initial_messages)
+
+        send_message(initiated_chat, user_id, recipient.id, %{msg_text: msg_body})
+        IO.inspect chat_data
+
+        old_data = Interface.get_old_data(user_id)
+
+        chat_objects = load_chat_objects( user_id, old_data.chats_data )
+
+        IO.inspect "Debugggg"
+        IO.inspect old_data.chats_data
+        IO.inspect "2222222222"
+        IO.inspect chat_objects
+        IO.inspect "!!!!!!!!!"
+        socket = assign(socket, chat_objects: chat_objects)
+
+        {:noreply, socket}
+      x when x > 0 ->
+
+        IO.inspect "Send Message :)"
+
+        {:noreply, socket}
+    end
+
+  end
+
+  def send_message(chat, sender_id, recipient_id, %{msg_text: _msg_text} = msg_body) do
+
+    Phxapp.Endpoint.broadcast("user:#{recipient_id}", "new_msg", %{chat: chat, msg_body: msg_body, sender_id: sender_id})
+    IO.inspect "Message sent! :)"
+  end
+
+
+  ######### Handling Chats ##########################
+
+  def handle_event("chat_tab_clicked", %{"chat_list_id"=> chat_list_id}, socket) do
+    IO.inspect "Check Tab Clicked"
+    chat_list_id = String.to_integer(chat_list_id)
+
+    chat_objects = socket.assigns.chat_objects
+    [chat_object] = Enum.filter(chat_objects, fn c ->
+      c.chat_list_id == chat_list_id
+    end)
+
+    chat_id = chat_object.id
+    socket = assign(socket, chat_screen_type: 1, chat_data: chat_object)
+
+    cond do
+      chat_id == -1 ->
+        IO.inspect "Fake Chat"
+        socket = assign(socket, chat_screen_type: -1)
+        {:noreply, socket}
+       chat_id > 0  ->
+        IO.inspect "Real Chat"
+
+        #load_real_chat_screen(chat_id)
+        {:noreply, socket}
+
+    end
+
+  end
+
+
+  def initiate_new_chat(user_id, participants, chat_type \\ "private", chat_name \\ nil, initial_messages ) do
+
+    # NOTE - Participants MUST be a list of %Users{} structs!! Initial Messages MUST be a list of Params :) !!
+
+
+
+    Interface.initiate_new_chat(user_id, participants, chat_type, chat_name, initial_messages)
+  end
+
+
+  #################### Handling PubSub Communications #########################
+
+  def handle_info(%Phoenix.Socket.Broadcast{event: "msg_seen", payload: payload}, socket) do
+    IO.inspect "Message Seen"
+    IO.inspect payload
+    {:noreply, socket}
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{event: "msg_received", payload: payload}, socket) do
+  IO.inspect "Message Received"
+  IO.inspect payload
+  {:noreply, socket}
+  end
+
+  def handle_info(%{event: "chat_details_changed", payload: payload}, socket) do
+    IO.inspect "Chat Details Changed"
+    IO.inspect payload
+    {:noreply, socket}
+  end
+
+  def handle_info(%{event: "new_chat", payload: payload}, socket) do
+    IO.inspect "New Chat"
+    IO.inspect payload
+    {:noreply, socket}
+  end
+
+  def handle_info(%{event: "new_msg", payload: payload}, socket) do
+    IO.inspect "New Message Has Been Received"
+    IO.inspect payload
+    {:noreply, socket}
+  end
+
+  def handle_info(%{ event: "new_contact", payload: payload }, socket) do
+    IO.inspect "New Contact Has Been Added"
+    IO.inspect payload
+    {:noreply, socket}
+  end
+
+  def handle_info(%{event: "contact_status_change", payload: payload}, socket) do
+    IO.inspect "A Contact Has Changed Their Status"
+    IO.inspect payload
+    {:noreply, socket}
+  end
+
+end

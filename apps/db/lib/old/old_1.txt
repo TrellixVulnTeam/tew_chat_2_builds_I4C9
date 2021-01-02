@@ -1,0 +1,407 @@
+defmodule DB.Interface do
+  alias DB.{Repo, Users, Chats, Users_Chats, Users_Contacts, Messages, Password}
+  import Ecto.Query
+  require Logger
+  @moduledoc """
+  Documentation for `Db`.
+  """
+
+  @doc """
+  Hello world.
+
+  ## Examples
+
+      iex> Db.hello()
+      :world
+
+  """
+
+
+
+  ## Get Query
+
+  def get_all_query(query) do
+    Repo.all(query)
+  end
+  #######
+
+  def all_users() do
+    Repo.all(Users)
+  end
+
+  def get_user(id) do
+    Repo.get(Users, id)
+  end
+
+  def new_user() do
+    %Users{}
+    |> Users.changeset
+  end
+
+  def create_user(params) do
+    %Users{}
+    |> Users.changeset_with_password(params)
+    |> Repo.insert
+  end
+
+  def delete_user(id) do
+    Repo.delete(User, id)
+  end
+
+  def edit_user(id) do
+    Repo.get(User, id)
+    |> Users.changeset
+  end
+
+  def update_user(id, params) do
+    Repo.get(Users, id)
+    |> Users.changeset(params)
+    |> Repo.update
+  end
+
+  ############
+
+  def all_chats() do
+    Repo.all(Chats)
+  end
+
+  def get_chat(id) do
+    Repo.get(Chats, id)
+  end
+
+  def new_chat() do
+    %Chats{}
+    |> Chats.changeset
+  end
+
+  def create_chat(params) do
+    %Chats{}
+    |> Chats.changeset(params)
+    |> Repo.insert
+  end
+
+  def edit_chat(id) do
+    Repo.get(Chats, id)
+    |> Chats.changeset
+  end
+
+  def update_chat(id, params) do
+    Repo.get(Chats, id)
+    |> Chats.changeset(params)
+    |> Repo.update
+  end
+
+  def delete_chat(id) do
+    Repo.delete(Chats, id)
+  end
+
+  ##### Messages
+
+  def all_messages() do
+    Repo.all(Messages)
+  end
+
+  def get_message(id) do
+    Repo.get(Messages, id)
+  end
+
+  def new_message() do
+    %Messages{}
+    |> Messages.changeset
+  end
+
+  def create_message(params) do
+    %Messages{}
+    |> Messages.changeset(params)
+    |> Repo.insert
+  end
+
+  def edit_message(id) do
+    Repo.get(Messages, id)
+    |> Messages.changeset
+  end
+
+  def update_message(id, params) do
+    Repo.get(Messages, id)
+    |> Messages.changeset(params)
+    |> Repo.update
+  end
+
+  def delete_message(id) do
+    Repo.delete(Messages, id)
+  end
+
+  ### Contacts
+
+  def add_all_users_as_contacts(user) do
+    user_id = user.id
+    user = get_user(user_id)
+    all_users = all_users()
+
+    Enum.each(all_users, fn u ->
+
+      if u.id != user_id do
+
+        u_p =
+        u
+        |> Repo.preload(:contacts)
+        u_c =
+        u_p
+        |> Ecto.Changeset.change
+        u_ready =
+        u_c
+        |> Ecto.Changeset.put_assoc(:contacts, [user | u_p.contacts])
+        result =
+        u_ready
+        |> Repo.update
+
+        Phxapp.Endpoint.broadcast("user:#{u.id}", "new_contact", %{new_contact: user})
+
+        #IO.inspect "Debug 1"
+        #IO.inspect "u_p"
+        #IO.inspect u_p
+        #IO.inspect "u_c"
+        #IO.inspect u_c
+        #IO.inspect "u_ready"
+        #IO.inspect u_ready
+        #IO.inspect "u_p.contacts"
+        #IO.inspect u_p.contacts
+        #IO.inspect "Result 1"
+        #IO.inspect result
+        #IO.inspect "2111111111111"
+
+        user_p=
+        user
+        |> Repo.preload(:contacts)
+        result_2 =
+        user_p
+        |> Ecto.Changeset.change
+        |> Ecto.Changeset.put_assoc(:contacts, [u |> Repo.preload(:contacts) | user_p.contacts ])
+        |> Repo.update
+
+        #IO.inspect "Debug 2"
+        #IO.inspect "user_p"
+        #IO.inspect user_p
+        #IO.inspect "Results_2"
+        #IO.inspect result_2
+        #IO.inspect "31111111111"
+
+
+
+      end
+
+
+    end)
+  end
+
+  def add_all_users_as_contacts_2(user) do
+    user_id = user.id
+    all_users = all_users()
+
+    Enum.each(all_users, fn u ->
+
+      if u.id != user_id do
+
+      result_1 =
+        u
+      |> Repo.preload(:contacts)
+      |> Ecto.Changeset.change
+      |> Ecto.Changeset.put_assoc(:contacts, [user | [] ])
+      |> Repo.update
+
+      #Logger.debug "Result 1"
+      #IO.inspect result_1
+      #IO.inspect "333333"
+      #IO.inspect u |> Repo.preload(:contacts) |> Ecto.Changeset.change
+      #IO.inspect "111111111"
+
+      user
+      |> Repo.preload(:contacts)
+      |> Ecto.Changeset.change
+      |> Ecto.Changeset.put_assoc(:contacts, [u | user.contacts])
+      |> Repo.update
+
+      end
+
+      #IO.inspect "Debug 1"
+      #debug_user = Repo.get(Users, user_id) |> Repo.preload(:contacts)
+      #IO.inspect debug_user
+      #IO.inspect "222222222"
+      user
+
+    end)
+
+
+  end
+
+  def all_contacts_for_user(id) do
+    query = from u in Users,
+            join: uc in Users_Contacts,
+            on: u.id == uc.users_id,
+            join: c in Users,
+            on: uc.contacts_id == c.id,
+            where: u.id == ^id,
+            select: c
+
+    query = from uc in Users_Contacts,
+            where: uc.users_id == ^id,
+            join: u in Users,
+            on: uc.contacts_id == u.id,
+            select: u
+
+
+
+    contacts = Repo.all(query)
+    contacts
+  end
+
+  #########################
+
+  def get_old_data(user_id) do
+    user_details = get_user(user_id)
+    contacts = all_contacts_for_user(user_id)
+    chats_data = get_old_chats(user_id)
+
+
+    %{user_details: user_details, chats_data: chats_data, contacts: contacts }
+  end
+
+
+  def get_old_chats(user_id) do
+
+    query_chats = from uc in Users_Chats,
+                  where: uc.users_id == ^user_id,
+
+                  select: uc
+    chats =
+      Repo.all(query_chats)
+      |> Enum.map( fn c ->
+            chat_query = from c_1 in Chats,
+                    where: c_1.id == ^c.chats_id,
+                    select: c_1
+            Repo.one(chat_query)
+              end)
+
+      query_chats = from uc in Users_Chats,
+                    join: c in Chats,
+                    on: uc.chats_id == c.id,
+                    where: uc.users_id == ^user_id,
+                    select: c
+
+      chats = Repo.all(query_chats)
+
+      #IO.inspect "Bitch, this is Chats"
+
+      #IO.inspect chats
+
+    chats_data = Enum.map(chats, fn c ->
+            chat_object = c
+            messages_query = from m in Messages,
+                    where: m.chats_id == ^c.id,
+                    select: m
+            messages = Repo.all(messages_query)
+            participants_query = from uc in Users_Chats,
+                                 join: u in Users,
+                                 on: uc.users_id == u.id,
+                                 where: uc.chats_id == ^c.id and uc.users_id != ^user_id,
+                                 select: u
+            other_participants = Repo.all(participants_query)
+
+            %{chat_object: chat_object, messages: messages, other_participants: other_participants }
+            end)
+
+    chats_data
+
+end
+
+### Creating A New Chat
+
+def initiate_new_chat(creator_id, other_participants, chat_type, chat_name, initial_messages_params_structs) do
+    chat_name =
+          case chat_name do
+            nil -> "Nameless Chat"
+            _ -> chat_name
+          end
+    {:ok, created_chat} = create_chat(%{chat_type: chat_type, chat_name: chat_name, creator_id: creator_id})
+    chat_query = from c in Chats,
+                    where: c.creator_id == ^creator_id,
+                    order_by: [desc: c.inserted_at],
+                    select: c
+    [chat | _] = Repo.all(chat_query)
+
+    other_participants_preloaded_chats =
+          Enum.map(other_participants, fn p ->
+            Repo.preload(p, :chats)
+          end)
+
+    Enum.each(other_participants_preloaded_chats, fn p ->
+      p
+      |> Ecto.Changeset.change
+      |> Ecto.Changeset.put_assoc(:chats, [ chat | p.chats])
+      |> Repo.update
+    end)
+
+    user_object = get_user(creator_id)
+    user_object_p =
+    user_object
+    |> Repo.preload(:chats)
+    user_object_p
+    |> Ecto.Changeset.change
+    |> Ecto.Changeset.put_assoc(:chats, [ chat | user_object_p.chats ])
+    |> Repo.update
+
+    [{:ok, created_message}] = Enum.map(initial_messages_params_structs, fn m ->
+      params = Map.merge(m, %{chats_id: chat.id, sender_id: creator_id})
+      create_message(params)
+    end)
+  {created_chat, created_message}
+end
+
+## Send a Message to a Chat ##
+
+def send_message(chat, sender_id, %{msg_text: msg_text} = _msg_body) do
+  params = %{chats_id: chat.id, sender_id: sender_id, msg_text: msg_text, received: false, seen: false}
+
+  create_message(params)
+end
+
+def initiate_new_message(%{chats_id: _chats_id, msg_body: _msg_body, sender_id: _sender_id} = params) do
+
+  {:ok, message_struct} = create_message(params)
+
+_dont_need = """
+  chat_struct = get_chat(chats_id)
+  chat_struct_preloaded = chat_struct |> Repo.preload(:messages)
+  chat_struct_preloaded |> Ecto.Changeset.change |> Ecto.Changeset.put_assoc(:messages, [message_struct | chat_struct_preloaded.messages ] ) |> Repo.update
+"""
+
+message_struct
+
+end
+
+##### Session
+
+def get_user_by_username_and_password(username, password) do
+  with user when not is_nil(user) <- Repo.get_by(Users, %{username: username}),
+       true <- Password.verify_password(password, user.hashed_password) do
+    user
+  else
+    _ -> Password.dummy_verify
+  end
+end
+
+########################
+
+## General
+
+
+  def shutdown_sequence(state) do
+    _assigns = state.assigns
+    msg = "Successfully saved state to database!"
+    {:ok, msg}
+  end
+
+  def hello do
+    :world
+  end
+end

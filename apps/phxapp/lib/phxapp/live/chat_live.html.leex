@@ -1,0 +1,53 @@
+<div class="top_window">
+<div class="top_window_column_1"></div>
+
+<div class="top_window_column_2">
+
+<div class="main_window">
+    <div class="chat_header"> <h2>Welcome - <%= @username %> - Local CLOs ID: <%=  if @current_chat_object != nil, do: @current_chat_object.chat_list_objects_id %> </h2>
+    </div>
+
+    <div class="chat_sidebar">
+        <div class="control_center">
+
+        </div>
+
+        <div class="chats_stack">
+            <div class="inner">
+            <%= for {_k, chat} <- @chat_list_objects do %>
+
+            <div class="chat_tab" phx-click="chat_tab_clicked" phx-value-chat_list_id="<%= chat.chat_list_objects_id %>" >
+
+                <%=
+                    #Group Chat Setup goes here - just got the Private Chat stuff, for now
+                    case chat.chat_type do
+                        %FakeChat{} -> chat.local_name
+                        %PrivateChat{} -> chat.local_name
+                    end
+                 %>
+
+                 Local CLO ID: <%= chat.chat_list_objects_id %>
+
+            </div>
+
+            <% end %>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat_column">
+        <%= case @render_screen_type.render_value do
+            0 -> live_component(@socket, Phxapp.MainRenderScreenLive, id: "MainRenderScreenLive" )
+            1 ->
+            live_component(@socket, Phxapp.ChatScreenLive, current_chat_object: @current_chat_object, user_id: @user_id, id: "ChatScreenLive" )
+        end %>
+    </div>
+
+</div>
+
+</div>
+
+
+<div class="top_window_column_3"></div>
+
+</div>
