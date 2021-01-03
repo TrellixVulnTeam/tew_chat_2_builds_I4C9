@@ -14,12 +14,10 @@ defmodule Phxapp.SessionController do
           conn
           |> put_session(:current_user, user)
           |> put_session(:logged_in, true)
-          |> put_flash(:info, "Successfully logged in :)")
           |> redirect(to: Routes.chat_path(conn, :index))
 
         _ ->
           conn
-          |> put_flash(:error, "Sorry, unsuccessful login")
           |> render("login.html")
 
     end

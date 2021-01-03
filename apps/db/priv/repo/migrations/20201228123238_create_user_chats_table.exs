@@ -4,8 +4,8 @@ defmodule DB.Repo.Migrations.CreateUserChatsTable do
   def up do
     execute """
     CREATE TABLE IF NOT EXISTS users_chats(
-      users_id INTEGER REFERENCES users(id),
-      chats_id INTEGER REFERENCES chats(id),
+      users_id INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+      chats_id INTEGER REFERENCES chats(id) ON UPDATE CASCADE ON DELETE CASCADE,
       CONSTRAINT users_chats_pkey PRIMARY KEY (users_id, chats_id)
 
     );

@@ -26,6 +26,9 @@
 
             <% end %>
 
+                <div class="seperator">
+                  <!-- Empty Seperator Div Here -->1
+               </div>
 
             </div>
             <!-- Inner end -->
@@ -35,8 +38,8 @@
 
          <div class="keyboard_area">
 
-            <form class="keyboard_area_form" phx-submit="send_button_clicked">
-            <input type="text" name="msg_text">
+            <form id="keyboard_form" class="keyboard_area_form" phx-submit="send_button_clicked">
+            <input type="text" name="msg_text" id="input_text">
             <button> Send </button>
             </form>
 

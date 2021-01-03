@@ -1,1 +1,1 @@
-<%= render "form.html", user: @item, action: Routes.user_path(@conn, :create)%>
+<%= render "form.html", conn: @conn, user: @item, action: Routes.user_path(@conn, :create)%>

@@ -1,22 +1,43 @@
 /* This file is for your main application css. */
-@import "./phoenix.css";
+//@import "./phoenix.css";
 @import "../node_modules/nprogress/nprogress.css";
 
 //// My Alterations
 
 // Main Chat App
 
+:root{
+  --main-window-colour: #101010;
+  --inner-space-colour: #181d24;
+  --standard-border-radius: 5px;
+  --pinky-red-colour: #a94442a2;
+}
+
+*{
+  background: transparent;
+}
+
 .top_window {
-  background-color: #ECE5DD;
+  background-image: 
+  linear-gradient(to bottom, rgba(245, 246, 252, 0.52), rgba(117, 19, 93, 0.73)),
+  url("/images/Whatsapp-Wallpaper-120.jpg");
+  //linear-gradient(to bottom, rgba(245, 246, 252, 0.52), rgba(117, 19, 93, 0.73)),
+  //background: linear-gradient(rgba(8, 11, 19, 1), rgba(36, 59, 85, 1));
+
   height: 100vh;
   width: 100vw;
+  min-width: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
-
+  
   display: grid;
   grid-template-columns: 1fr 3fr 1fr;
   font-size: 2 em;
+  font-family: sans-serif;
+
+
 }
 
 
@@ -31,79 +52,221 @@ background-color: inherit;
 .main_window {
   display: grid;
   height: 90vh;
-  min-height: 20vh;
+  min-height: 600px;
+  min-width: 500px;
+
   border-radius: 3%;
   
-  background-color: white;
-
+  padding: 10px;
+  color: whitesmoke;
+  background-color: #101010;
+  background-image:
+  linear-gradient(to bottom, rgba(19, 27, 77, 0.52), rgba(117, 19, 93, 0.73)),
+  url("/images/e8d94e1e8b6b530ad315e9385290141b.jpg");
+  
+  box-shadow: 0px 11px 20px rgba(0,0,0, 0.9);
   grid-template-columns: 1fr 3fr;
   grid-template-areas: 
   
   "header header"  
   "sidebar main_chat_area";
   
-  grid-template-rows: 5% 95%;
-
+  grid-template-rows: 10% auto;
 }
 
-.chat_header{
-
-  border: dashed black 1px; 
+.chat_header, #chat_header{
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
   grid-area: header;
+  color: white;
+  text-shadow: 0px 0px 10px #4894b9;
+  font-size: 2.5em;
+}
+
+.chat_header_wrapper > h1 {
+  font-style: italic;
+}
+
+.inner_header{
+  //text-decoration: underline;
+  color:rgb(219, 191, 33);
+  font-size: 1.3em;
+  font-size: 100%;
+  padding-left: 1px;
+}
+
+.triangle_1{
+  color: lightskyblue;
+  padding: 0px 3px;
+
 }
 
 .chat_sidebar {
-  border: dashed black 1px; 
+  ////boreder: dashed black 1px; 
   grid-area: sidebar;
 
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 15% auto;
+  font-weight: bold;
+  text-shadow: 0px 0px 10px #47cae4b0;
+
+}
+
+.chat_sider:hover{
+letter-spacing: 1px;
 }
 
 .control_center{
-  border: dashed black 1px; 
+//  //boreder: dashed black 1px; 
+  display: flex;
+  margin: 5px;
+  padding: 10px;
+  flex-direction: column-reverse;
+  text-align: center;
+  border-radius: 30px;
+  
+  background-color: #1c0b253a;
+  border: 1px solid rgba(255, 192, 229, 0.342);
 
+  font-size: 150%;
 }
 
-.chats_stack{
-  border: dashed black 1px; 
-  padding: 5px;
+.user_info:hover{
+  font-weight: bold;
+  letter-spacing: 1px;
+}
 
+.wrapper{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+padding: 5px;
+height: 100%;
+background-color: #0b172531;
+border-radius: 20px
+}
+
+
+.chats_stack{
+ // //boreder: dashed black 1px; 
+  padding: 5px;
+  margin-right: 5px;
+  width: 100%;
 }
 
 .inner{
-  background: #ECE5DD;
+  //background: #181d24;
+  //background: rgba(0, 0, 0, 0.3);
+ // background-image: url("/apps/phxapp/priv/static/images/Whatsapp-Wallpaper-120.jpg");
   width: 100%;
   height: 100%;
-  padding: 10px;
+  padding: 5px 2px;
+  border-radius: 5px;
+  //box-shadow: inset 1px 0px 10px black;
 
 }
 
 .chat_tab{
-  background-color: white;
-  margin: 3px 0px;
-  padding: 5px;
+  //background-color: #1c0b258a;
+  //background: radial-gradient(#1c0b258a, #1c0b2533);
+  //background: transparent;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 192, 229, 0.342);
+  margin: 10px 10px;
+  border-radius: 5px;
+  padding: 10px;
+
+  text-align: center;
+  color: white;
+  text-shadow: 0px 0px 10px #47cae4b0;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.chat_tab:hover{
+ // background-color: #69348544;
+  color: white;
+  text-shadow: 0px 0px 5px #0d7ab1;
+  box-shadow: 0px 0px 5px #0d7ab1;
+  letter-spacing: 2px;
+  font-weight: bold;
+
+}
+
+.main_area_wrapper{
+  margin: 20px;
+  //background-color: #a94442be;
+  background: rgba(0, 0, 0, 0.13);
+  border-radius: 5%;
+  box-shadow: 0px 0px 10px #a94442;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-shadow: 0px 0px 4px rgba(135, 206, 250, 0.842);
+
+  font-size: 130%;
+}
+
+.header_wrapper{
+  display: flex;
+  justify-content: center;
+  margin: 0px;
+
+  text-decoration: underline;
+}
+
+.user_details_body{
+  margin: 0px;
+}
+
+.button_div{
+  margin: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+#logout_button{
+
+  padding: 6px;
+  font-size: 80%;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 .chat_column {
-  border: solid black 1px; 
+  //boreder: solid black 1px; 
+  //background-color: #101010;
+  background: transparent;
 grid-area: main_chat_area;
 
 display: grid;
 grid-template-rows: 92% auto;
+overflow: hidden;
+padding: 5px;
+
+//background-image: url("/apps/phxapp/priv/static/images/Whatsapp-Wallpaper-120.jpg");
 }
 
-.keyboard_area_form{
-  display: flex;
-  padding: 5px;
-}
 
 .main_chat_area{
-  border: dashed black 1px; 
-
+  //boreder: dashed black 1px; 
+  
   padding: 2px;
+  overflow: hidden;
+  margin: 0px;
+}
+.seperator{
+  position: relative;
+  color: transparent;
+  left: 1000000px;
+  font-size: 0.1rem;
 }
 
 .main_chat_area > .inner {
@@ -111,7 +274,19 @@ grid-template-rows: 92% auto;
   flex-direction: column-reverse;
   height: 100%;
   overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 20px;
+  border-radius: 20px;
+  background-image:
+  linear-gradient(to bottom, rgba(19, 27, 77, 0.52), rgba(117, 19, 93, 0.73)),
+  url("/images/homer_stars_1.jpg");
+  //opacity: 0.5;
+  background-size: 150%;
+  background-repeat: no-repeat;
+  background-position: right;
+  background-attachment: scroll;
 }
+
 
 
 /* Messages Styles */
@@ -123,19 +298,22 @@ grid-template-rows: 92% auto;
   display: flex;
 justify-content: flex-end;
 
+
 }
   
 
 .message_item{
 background-color: #020102;
-color: whitesmoke;
+color: white;
 
 text-align: left;
 
 border-radius: 5px;
-box-shadow: 5px 5px #1A2828;
-
+box-shadow: 4px 3px 10px 0px rgba(135, 206, 250, 0.842);
+letter-spacing: 1px;
 padding: 7px;
+
+text-shadow: 0px 0px white;
 }
 
 .message.their_message{
@@ -144,7 +322,8 @@ padding: 7px;
 }
 
 .message_item.their_message{
-  background-color: #a94442;
+  background-color: #851d1bd0;
+  box-shadow: -2px 2px 10px 0px rgba(135, 206, 250, 0.842);
 }
 
 /* End of Messages Styles */
@@ -155,10 +334,188 @@ padding: 7px;
 }
 
 .keyboard_area{
-  border: dashed black 1px; 
+  //boreder: dashed black 1px; 
+  padding: 5px;
+  color: whitesmoke;
+}
+
+.keyboard_area_form{
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  padding: 5px;
+  color: white;
+}
+
+#search_chats, #search_chats:focus, #input_text, #input_text:focus{
+  padding: 5px;
+  margin: 5px;
+  height: 30px;
+  width: 100%;
+
+  background: transparent;
+  color: whitesmoke;
+  border: solid 1px lightskyblue;
+  border-radius: 10px;
+  outline: none;
+  
+  letter-spacing: 1px;
+}
+
+button, button:focus{
+  border-radius: 10px;
+  border: solid 1px lightskyblue;
+  background: transparent;
+  color: white;
+  letter-spacing: 1px;
+  outline: none;
+}
+
+button:hover{
+  text-shadow: 0px 0px 3px lightskyblue;
+}
+
+.inner::-webkit-scrollbar-track
+{
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  background-color:transparent;
+}
+
+.inner::-webkit-scrollbar
+{
+  width: 12px;
+  background-color: transparent;
+}
+
+.inner::-webkit-scrollbar-thumb
+{
+  border-radius: 7px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+  background-color: rgba(135, 206, 250, 0.411);
+}
+
+::-webkit-calendar-picker-indicator {
+  background-color: transparent;
+  }
+
+#search_chats_datalist, option{
+  background: transparent;
+}
+
+input[type=search] { 
+	background: transparent;           
+}
+
+.login_most_outter_wrapper{
+   display: flex;
+   flex-direction: column;
+   justify-content: space-evenly;
+   align-items: center;
+   height: 100vh;
+   background: linear-gradient( rgb(14, 21, 58), rgb(71, 63, 110) );
 }
 
 
+
+.login_form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 500px;
+  padding: 10px;
+  background: var(--inner-space-colour);
+  box-shadow: 2px 5px 10px  black;
+}
+
+.form_div {
+  margin: 10px;
+  padding: 10px;
+  background: transparent;
+  color: white;
+  font-weight: bold;
+  
+}
+
+.form_div > label {
+  padding: 5px;
+  text-shadow: 0px 0px 2px lightskyblue;
+ 
+}
+
+.form_links {
+  display: flex;
+  justify-content: center;
+  margin: 5px;
+}
+
+.form_links > .login_page, .form_links > .create_page {
+  text-decoration: underline;
+}
+
+
+.form_links > .login_link > a, .form_links > .create_user_link > a {
+  text-decoration: none;
+  color: white; 
+  padding: 5px;
+  font-weight: bold;
+  font-size: 1.5em;
+  text-shadow: 0px 0px 2px lightskyblue;
+}
+
+.form_links > .login_link > a:hover, .form_links > .create_user_link > a:hover {
+  font-weight: bolder;
+   text-shadow: 0 0 3px rgb(197, 33, 219);
+}
+
+.form_div > input {
+  border: 1px solid white;
+  border-radius: 5px;
+  padding: 5px;
+  letter-spacing: 3px;
+  color: white;
+  text-shadow: 0 0 2px rgb(236, 135, 250);
+}
+
+.form_div.submit{
+  display: flex;
+  justify-content: center;
+}
+
+.form_div > button {
+  text-shadow: 0 0 2px lightskyblue;
+
+  font-size: 1.1rem;
+  padding: 7px;
+}
+
+
+.form_div > button:hover {
+  text-shadow: 0 0 5px lightskyblue;
+
+  font-size: 1.1rem;
+  padding: 7px;
+}
+
+// Index
+
+.login_most_outter_wrapper.index{
+  margin: 10px;
+}
+
+.index_inner_wrapper > h1 > a{
+  font-size: 9rem;
+  text-shadow: 0 0 2px lightskyblue;
+  color: white;
+  font-style: italic;
+}
+
+.by_me {
+  display: flex;
+  justify-content: center;
+  color:rgba(192, 189, 189, 0.205);
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.349);
+  font-style: italic;
+}
 
 
 
@@ -166,7 +523,7 @@ padding: 7px;
 
 html, body{
   height: 100%;
-
+  font-family: sans-serif;
 }
 
 html {
@@ -184,7 +541,6 @@ body{
 }
 
 .container{
-  background-color: #a94442;
   margin: 0;
   padding: 0;
 }

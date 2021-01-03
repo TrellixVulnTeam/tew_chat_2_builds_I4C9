@@ -8,11 +8,7 @@ defmodule Phxapp.ChatLive do
   ################ General & System ####################
 
   def mount(_params, session, socket) do
-    ## Test Input
-
-    ########
     %{id: user_id, username: username } = Map.get(session, "current_user")
-   # user_id = String.to_integer(user_id)
     current_user = Interface.get_user(user_id)
     render_screen_type = %RenderMainScreen{}
 
@@ -20,15 +16,11 @@ defmodule Phxapp.ChatLive do
       Phoenix.PubSub.subscribe(Phxapp.PubSub, "user:#{user_id}")
     end
 
-    #old_Data = [%{user_details: user_details, chats_data: chats, contacts: contacts}]
     old_data = Interface.get_old_data(user_id)
     chat_list_objects = build_chat_list_objects(old_data)
 
-    #IO.inspect "This is chat_list_objects:"
-    #IO.inspect chat_list_objects
-    #IO.inspect "!!!!!!!!!!!!!!!!!"
-
-    socket = assign(socket, old_data: old_data, user_id: user_id, username: username, new_data: %{}, chat_list_objects: chat_list_objects, current_chat_object: nil, current_chat_object_id: 0, current_user: current_user
+    socket = assign(socket, old_data: old_data, user_id: user_id, username: username, new_data: %{}, chat_list_objects: chat_list_objects, current_chat_object: nil, current_chat_object_id: 0, current_user: current_user,
+    searched_clo: nil, searched_clos: []
     )
 
     socket = assign(socket, render_screen_type: render_screen_type)
@@ -132,10 +124,7 @@ defmodule Phxapp.ChatLive do
   def handle_info(%{event: "new_message", payload: inter_message_object}, socket) do
     chat_list_objects = socket.assigns.chat_list_objects
     current_chat_object = socket.assigns.current_chat_object
-    #IO.inspect "I am the error, coo-coo cachu"
-    #IO.inspect inter_message_object
     received_chat_struct = inter_message_object.chat_object
-    #IO.inspect "Don't reach! :D"
     {_i, target_chat_object} = Enum.find(chat_list_objects, fn {_i, clo} ->
 
       case clo.chat_object do
@@ -148,13 +137,8 @@ defmodule Phxapp.ChatLive do
     old_messages = target_chat_object.messages
 
     updated_chat_object = struct(target_chat_object, messages: [ new_message | old_messages] )
-    #xxx check that I used struct() instead of Map.put, elsewhere
-
-    IO.inspect "Is there error here 4"
 
     target_chat_object_id = target_chat_object.chat_list_objects_id
-    IO.inspect "Is there error here 4.5"
-    IO.inspect ""
     updated_current_chat_object =
     if current_chat_object == nil do
       current_chat_object
@@ -167,25 +151,15 @@ defmodule Phxapp.ChatLive do
 
     end
 
-    IO.inspect "Made it here!"
-
-    #xxx check I used Map.put/3 instead of accidentally using Map.put/2 - i.e. Map.put(chat_list_objects, target_chat_object_id, a_chat_object ), instead of Map.put(chat_list_objects, target_chat_object_id: a_chat_object)
-    #IO.inspect "Bout here"
     chat_list_objects = Map.put(chat_list_objects, target_chat_object_id, updated_chat_object )
-   # IO.inspect "Here?"
     socket = assign(socket, chat_list_objects: chat_list_objects, current_chat_object: updated_current_chat_object)
-  #  IO.inspect "Do we get here?"
     {:noreply, socket}
   end
 
   def handle_info(%{event: "new_chat", payload: inter_message_object }, socket) do
-    IO.inspect "Message Received! :)"
     chat_list_objects = socket.assigns.chat_list_objects
     chat_list_objects = install_new_chat(inter_message_object, chat_list_objects)
     current_chat_object = socket.assigns.current_chat_object
-    IO.inspect "BOUT TO BE A CUNTY ERROR"
-
-    IO.inspect "Fooooooooookin error"
 
     socket =
     case current_chat_object do
@@ -206,19 +180,9 @@ defmodule Phxapp.ChatLive do
       %NewPrivateChat{} ->
 
       sender_object_id = inter_message_object.sender_object.id
-      #xxx this line used to be -   local_contact_id = for {k, %ChatListObject{contact_objects: [%{id: ^sender_object_id}]} } <- chat_list_objects, do: k
-      #But it seemed to return a list around local contact id, so I've encased local contact id in a list to pattern match local_contact_id. Might have to change it back.
        [local_contact_id] = for {k, %ChatListObject{contact_objects: [%{id: ^sender_object_id}]} } <- chat_list_objects, do: k
 
        contact_clo = Map.get(chat_list_objects, local_contact_id)
-
-       #IO.inspect "This is local_contact_id:"
-       #IO.inspect local_contact_id
-       #IO.inspect "These are the chat_list_objects"
-       #IO.inspect chat_list_objects
-       #IO.inspect "This is the contact_clo"
-       #IO.inspect contact_clo
-       #IO.inspect "111111111111"
        clo = new_private_chat_list_object(contact_clo, inter_message_object.chat_object )
 
        Map.put(chat_list_objects, local_contact_id, clo)
@@ -228,13 +192,77 @@ defmodule Phxapp.ChatLive do
     chat_list_objects
   end
 
+  def filter_contact_search(search_term, chat_list_objects) do
+    if search_term == "" do
+      []
+
+    else
+
+      Enum.into(chat_list_objects, [], fn {_i, clo} -> clo end)
+      |> Enum.filter( fn clo ->
+
+        #Group Chat Setup Goes here! Only put in support for private chat in the case do, below :)
+        result =
+        case clo.chat_type do
+          _ ->
+          String.contains?(String.downcase(clo.local_name), String.downcase(search_term))
+        end
+
+        result
+      end)
+      |> Enum.into([], fn clo ->
+        {clo.chat_list_objects_id, clo.local_name}
+      end)
+    end
+
+  end
+
+  def handle_event("found_chat", %{"searched_clo" => searched_clo}, socket) do
+    chat_list_objects = socket.assigns.chat_list_objects
+    match =
+      chat_list_objects
+      |> Enum.find(fn {_i, clo} ->
+        String.downcase(clo.local_name) == String.downcase(searched_clo)
+      end)
+        {render_screen_type, current_chat_object, searched_clo} =
+    case match do
+      nil ->
+        {%RenderMainScreen{}, socket.assigns.current_chat_object, searched_clo}
+      {_i, %ChatListObject{} = found_clo} ->
+        {%RenderRealChat{}, found_clo, searched_clo}
+    end
+    socket= assign(socket, searched_clo: searched_clo, current_chat_object: current_chat_object, render_screen_type: render_screen_type)
+    {:noreply, socket}
+  end
+
+  def handle_event("search_chats", %{"searched_clo" => search}, socket) do
+    chat_list_objects = socket.assigns.chat_list_objects
+
+    socket =
+    case chat_list_objects |> Enum.count() do
+      0 -> socket
+     x when x > 0 -> clo_results = filter_contact_search(search, chat_list_objects)
+          socket = assign(socket, searched_clos: clo_results)
+          socket
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("logout", _, socket) do
+    socket = redirect(socket, to: Routes.session_path(socket, :delete))
+    {:noreply, socket}
+  end
+
+  def handle_event("control_center_clicked", _params, socket) do
+    render_screen_type = %RenderMainScreen{}
+    socket = assign(socket, render_screen_type: render_screen_type)
+    {:noreply, socket}
+  end
+
   def handle_event("chat_tab_clicked", %{"chat_list_id" => chat_list_objects_id }, socket) do
     chat_list_objects = socket.assigns.chat_list_objects
     chat_list_objects_id = String.to_integer(chat_list_objects_id)
-   # IO.inspect "This is chat_list_objects_id: #{chat_list_objects_id}"
-    #IO.inspect  "This is chat_list_objects"
-    #IO.inspect chat_list_objects
-    #IO.inspect "1111111111111111111"
 
     new_current_chat_object = Map.get(chat_list_objects, chat_list_objects_id)
 
@@ -244,108 +272,108 @@ defmodule Phxapp.ChatLive do
   end
 
   def handle_event("send_button_clicked", %{"msg_text" => msg_text} = msg, socket ) do
+
+    socket =
+      case msg_text do
+        "" -> socket
+
+        _ ->
+
+
     %{current_chat_object: current_chat_object,
-      current_user: current_user, chat_list_objects: chat_list_objects
-    } = socket.assigns
+    current_user: current_user, chat_list_objects: chat_list_objects
+  } = socket.assigns
 
-    #If I don't want the target object to be the current_chat_object, then change it here! :)
-    target_chat_object = current_chat_object
+  #If I don't want the target object to be the current_chat_object, then change it here! :)
+  target_chat_object = current_chat_object
 
-    target_chat_list_objects_id = target_chat_object.chat_list_objects_id
-    IO.inspect "Is there error here 1"
+  target_chat_list_objects_id = target_chat_object.chat_list_objects_id
 
-    #Basically - we're sending a message. If the current chat is a %FakeChat{}, then we know we want to creat a new chat. Otherwise, we're targeting one that already exists, and must be in our records etc. Thus Global Chat Setup goes here.
+  #Basically - we're sending a message. If the current chat is a %FakeChat{}, then we know we want to creat a new chat. Otherwise, we're targeting one that already exists, and must be in our records etc. Thus Global Chat Setup goes here.
 
-    recipient_ids = get_recipient_ids_from_clo( target_chat_object )
+  recipient_ids = get_recipient_ids_from_clo( target_chat_object )
 
-    { updated_chat_list_objects, inter_message_object} =
-    case target_chat_object.chat_type do
-      %FakeChat{} -> #Group Chat Setup goes here
+  { updated_chat_list_objects, inter_message_object} =
+  case target_chat_object.chat_type do
+    %FakeChat{} -> #Group Chat Setup goes here
+      # xxx Refactor all the common bits here, in this case do, into a single, external function
 
-        #ADD CHAT and MESSAGE INTO DB AND ALSO INTO MY local CLO!! :)))
+      [recipient_id | _t] = recipient_ids
+      [contact | _t] = target_chat_object.contact_objects
+      new_chat_params = %{
+        chat_name: target_chat_object.local_name,
+        creator_id: current_user.id,
+        chat_type: 1,
+        recipient_id_if_private_chat: contact.id
+      }
+      {:ok, new_chat_struct} = Interface.create_chat( new_chat_params )
+      new_message_params = %{
+        msg_text: msg["msg_text"],
+        chats_id: new_chat_struct.id,
+        sender_id: current_user.id
+      }
 
+      {:ok, new_message_struct} = Interface.create_message(new_message_params)
 
-        # xxx Refactor all the common bits here, in this case do, into a single, external function
+      all_recipients_query = from u in Users,
+                             where: u.id in ^recipient_ids,
+                             select: u
+      recipients = Interface.get_all_query(all_recipients_query)
+      users_structs_list = [current_user | recipients ]
+      :ok = Interface.associate_chat_with_users(users_structs_list, new_chat_struct)
 
-        [recipient_id | _t] = recipient_ids
-        [contact | _t] = target_chat_object.contact_objects
-        new_chat_params = %{
-          chat_name: target_chat_object.local_name,
-          creator_id: current_user.id,
-          chat_type: 1,
-          recipient_id_if_private_chat: contact.id
-        }
-        {:ok, new_chat_struct} = Interface.create_chat( new_chat_params )
-      #  Interface.put_assoc_recipient_id_if_private_chat(new_chat_struct, contact.id)
-        new_message_params = %{
-          msg_text: msg["msg_text"],
-          chats_id: new_chat_struct.id,
-          sender_id: current_user.id
-        }
+      #Don't associate a new Contact Name with User_Contacts, because it hasn't changed since the contact was added - you change it in a different (as yet unwritten) function xxx
 
-        {:ok, new_message_struct} = Interface.create_message(new_message_params)
-
-
-        #Associate Chat With BOTH Users
-        all_recipients_query = from u in Users,
-                               where: u.id in ^recipient_ids,
-                               select: u
-        recipients = Interface.get_all_query(all_recipients_query)
-        users_structs_list = [current_user | recipients ]
-        :ok = Interface.associate_chat_with_users(users_structs_list, new_chat_struct)
-
-
-        #Don't associate a new Contact Name with User_Contacts, because it hasn't changed since the contact was added - you change it in a different (as yet unwritten) function xxx
-
-        updated_target_clo = struct(target_chat_object, chat_type: %PrivateChat{}, chat_object: new_chat_struct, messages: [ new_message_struct] )
+      updated_target_clo = struct(target_chat_object, chat_type: %PrivateChat{}, chat_object: new_chat_struct, messages: [ new_message_struct] )
 
 
 
-        #xxx Do ASSOCIATIONS!!!!! For goodness sake, build the associations! :)
+      #xxx Do ASSOCIATIONS!!!!! For goodness sake, build the associations! :)
 
-        updated_chat_list_objects = Map.put(chat_list_objects, updated_target_clo.chat_list_objects_id, updated_target_clo )
-        IO.inspect "Is there error here 2"
+      updated_chat_list_objects = Map.put(chat_list_objects, updated_target_clo.chat_list_objects_id, updated_target_clo )
 
-        {updated_chat_list_objects, build_send_new_private_chat_object( recipient_id, current_user  )}
+      {updated_chat_list_objects, build_send_new_private_chat_object( recipient_id, current_user  )}
 
-      %PrivateChat{} ->
-        #Add the new message into the sender's local system (clo, current_chat_object, etc)
+    %PrivateChat{} ->
+      #Add the new message into the sender's local system (clo, current_chat_object, etc)
 
-        # xxx Refactor all the common bits here, in this case do, into a single, external function
-        new_message_params = %{
-          msg_text: msg_text,
-          chats_id: target_chat_object.chat_object.id,
-          sender_id: current_user.id
-        }
+      # xxx Refactor all the common bits here, in this case do, into a single, external function
+      new_message_params = %{
+        msg_text: msg_text,
+        chats_id: target_chat_object.chat_object.id,
+        sender_id: current_user.id
+      }
 
-        {:ok, new_message_struct} = Interface.create_message(new_message_params)
+      {:ok, new_message_struct} = Interface.create_message(new_message_params)
 
-        updated_target_clo = update_clo_with_new_message( target_chat_object, new_message_struct)
+      updated_target_clo = update_clo_with_new_message( target_chat_object, new_message_struct)
 
-        updated_chat_list_objects = Map.put(chat_list_objects, updated_target_clo.chat_list_objects_id, updated_target_clo )
+      updated_chat_list_objects = Map.put(chat_list_objects, updated_target_clo.chat_list_objects_id, updated_target_clo )
 
-        IO.inspect "Is there error here 3"
-
-        { updated_chat_list_objects , build_send_message_object(target_chat_object,
-        new_message_struct, current_user)}
+      { updated_chat_list_objects , build_send_message_object(target_chat_object,
+      new_message_struct, current_user)}
 
 
-    end
+  end
 
-    #Remember, chat_list_objects_id is the local id of the chat in the chat_lists_objects map, that populates the chats tab column :)
+  #Remember, chat_list_objects_id is the local id of the chat in the chat_lists_objects map, that populates the chats tab column :)
 
 
-    send_new_inter_user_process_message( inter_message_object, recipient_ids )
+  send_new_inter_user_process_message( inter_message_object, recipient_ids )
 
-    updated_current_chat_object =
-    case inter_message_object.inter_message_type do
-      %NewPrivateChat{} ->
+  updated_current_chat_object =
+  case inter_message_object.inter_message_type do
+    %NewPrivateChat{} ->
+      Map.get(updated_chat_list_objects, target_chat_list_objects_id)
+    %NewMessage{} ->
         Map.get(updated_chat_list_objects, target_chat_list_objects_id)
-      %NewMessage{} ->
-          Map.get(updated_chat_list_objects, target_chat_list_objects_id)
-    end
+  end
 
-    socket = assign(socket, chat_list_objects: updated_chat_list_objects, current_chat_object: updated_current_chat_object ) ### Add current_chat_object # xxx check i haven't used spelling current_chat_list_object
+  socket = assign(socket, chat_list_objects: updated_chat_list_objects, current_chat_object: updated_current_chat_object ) ### Add current_chat_object # xxx check i haven't used spelling current_chat_list_object
+  socket
+
+      end
+
     {:noreply, socket}
   end
 
@@ -423,7 +451,6 @@ defmodule Phxapp.ChatLive do
   end
 
   def get_recipient_ids_from_clo( %ChatListObject{} = current_chat_object ) do
-    IO.inspect("Debug - get_recipient_ids_from_clo")
 
     case current_chat_object.chat_type do
       %FakeChat{} ->

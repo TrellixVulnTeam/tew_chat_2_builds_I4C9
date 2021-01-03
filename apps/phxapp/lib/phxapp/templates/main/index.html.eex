@@ -1,1 +1,14 @@
-<h1>Hello There! :D</h1>
+<div class="login_most_outter_wrapper">
+
+
+<div class="login_outer_wrapper index">
+
+<div class="index_inner_wrapper">
+<h1><%= link "Welcome!", to: Routes.session_path(@conn, :new) %></h1>
+</div>
+
+
+
+</div>
+
+</div>

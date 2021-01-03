@@ -1,1 +1,25 @@
-<h1> Please select a chat! :) </h1>
+<div class="main_area_wrapper">
+
+<div class="main_area_content">
+
+    <div class="user_details">
+
+    <div class="header_wrapper">
+        <div>
+        <h1><%= @current_user.username %></h1>
+        </div>
+    </div>
+
+    <div class="user_details_body">
+    <h2>Username: <%= @current_user.username %></h2>
+    <h2>Joined: <%= DateTime.to_date(@current_user.inserted_at) %></h2>
+    </div>
+    </div>
+
+    <div class="button_div">
+    <button id="logout_button" phx-click="logout"> Logout</button>
+    </div>
+</div>
+
+
+</div>

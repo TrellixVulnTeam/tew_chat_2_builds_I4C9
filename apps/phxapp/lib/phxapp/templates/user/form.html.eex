@@ -1,19 +1,49 @@
+<div class="login_most_outter_wrapper">
+
+
+<div class="login_outer_wrapper">
+
+
+
+<div class="login_form">
+
+<div class="form_links">
+    <div class="login_link">
+<%= link "Login", to: Routes.session_path(@conn, :new) %>
+    </div>
+
+    <div class="create_user_link create_page">
+<%= link "Create User", to: Routes.user_path(@conn, :new) %>
+    </div>
+</div>
+
 <%= form_for @user, @action, [as: :user], fn f -> %>
 
-<%= if @user.action do %>
-<div class="action action-alert">
-Errors, bro
-</div>
-<% end %>
+<div class="form_div">
 
 <%= label f, :username %>
 <%= text_input f, :username %>
 <%= error_tag f, :username %>
 
+</div>
+
+<div class="form_div">
+
 <%= label f, :password %>
 <%= text_input f, :password %>
 <%= error_tag f, :password %>
 
-<%= submit "Create User" %>
+</div>
+
+<div class="form_div submit">
+<%= submit "Login" %>
+</div>
 
 <% end %>
+
+</div>
+
+
+</div>
+
+</div>

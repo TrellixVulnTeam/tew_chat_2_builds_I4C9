@@ -8,9 +8,10 @@ defmodule DB.Repo.Migrations.CreateMessagesTable do
       msg_text VARCHAR not null,
       inserted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-
-      chat_id INTEGER REFERENCES chats(id),
-      sender_id INTEGER REFERENCES users(id)
+      received BOOLEAN default false,
+      seen BOOLEAN default false,
+      chats_id INTEGER REFERENCES chats(id) ON UPDATE CASCADE ON DELETE CASCADE,
+      sender_id INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     );
     """
   end

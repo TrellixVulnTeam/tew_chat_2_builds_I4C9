@@ -263,9 +263,7 @@ end
         _ -> false
       end
     end)
-    IO.inspect "This is the private_chats"
-    IO.inspect private_chats
-    IO.inspect "33333333333"
+
     group_chats = Enum.filter(all_chats, fn c ->
       case c.chat_type do
         2 -> true # chat_type == 2 means Group Chat

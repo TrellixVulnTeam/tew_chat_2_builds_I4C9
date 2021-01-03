@@ -1,14 +1,37 @@
+<div class="top_window_0">
+
 <div class="top_window">
 <div class="top_window_column_1"></div>
 
 <div class="top_window_column_2">
 
 <div class="main_window">
-    <div class="chat_header"> <h2>Welcome - <%= @username %> - Local CLOs ID: <%=  if @current_chat_object != nil, do: @current_chat_object.chat_list_objects_id %> </h2>
+    <div id="chat_header" class="chat_header">
+        <div class="chat_header_wrapper">
+             <h1> <span class="triangle_1"><</span>Tew<span class="inner_header">!</span>Chat<span class="triangle_1">></span></h1>
+
+        </div>
     </div>
 
     <div class="chat_sidebar">
-        <div class="control_center">
+        <div class="control_center" phx-click="control_center_clicked">
+            <div class="wrapper">
+             <div class="user_info">
+            <%= @username%>
+
+            </div>
+
+            <form phx-submit="found_chat" phx-change="search_chats" class="search_for_contacts_form">
+                <input id="search_chats" type="text" name="searched_clo" placeholder="Search Contacts"  list="search_chats_datalist">
+
+            </form>
+
+            </div>
+            <datalist style="background: transparent;" id="search_chats_datalist">
+                <%= for {_i, local_name} <- @searched_clos do %>
+                    <option style="background: transparent;" value="<%= local_name %>"> <%= local_name%> </option>
+                <% end %>
+            </datalist>
 
         </div>
 
@@ -26,7 +49,6 @@
                     end
                  %>
 
-                 Local CLO ID: <%= chat.chat_list_objects_id %>
 
             </div>
 
@@ -37,10 +59,14 @@
 
     <div class="chat_column">
         <%= case @render_screen_type.render_value do
-            0 -> live_component(@socket, Phxapp.MainRenderScreenLive, id: "MainRenderScreenLive" )
+            0 -> live_component(@socket, Phxapp.MainRenderScreenLive, id: "MainRenderScreenLive", current_user: @current_user )
             1 ->
             live_component(@socket, Phxapp.ChatScreenLive, current_chat_object: @current_chat_object, user_id: @user_id, id: "ChatScreenLive" )
         end %>
+
+            <div class="by_me">
+            <h5> ~ By Patrick Tew ~ </h5>
+            </div>
     </div>
 
 </div>
@@ -49,5 +75,10 @@
 
 
 <div class="top_window_column_3"></div>
+
+</div>
+
+
+
 
 </div>

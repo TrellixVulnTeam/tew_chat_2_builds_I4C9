@@ -28,6 +28,7 @@ defmodule Phxapp.UserController do
 
           conn
           |> put_session(:current_user, user)
+          |> put_session(:logged_in, true)
           |> redirect( to: Routes.chat_path(conn, :index))
         {:error, user} ->
           conn
@@ -45,7 +46,6 @@ defmodule Phxapp.UserController do
 
     if current_user == nil || current_user.id != requested_user_id do
       conn
-      |> put_flash(:error, "Sorry, you can't go in there")
       |> redirect(to: Routes.session_path(conn, :index))
       |> halt()
     else
