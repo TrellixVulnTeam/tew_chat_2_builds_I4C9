@@ -40,8 +40,8 @@ config :db, ecto_repos: [DB.Repo]
 config :db, DB.Repo,
 database: "tew_chat_database_1",
 username: "tew_chat_server",
-password: "Homerjay32!",
-host: "localhost",
+password: "Mv2AVgHms122DX4BOOfhmPHAssGXce1E",
+host: "dpg-bvpi4mgn4r01r10jnea0",
 port: "5432"
 
 #set include_erts: true

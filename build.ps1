@@ -2,7 +2,7 @@
 Write-Host "Building App"
 #!/usr/bin/env bash
 # exit on error
-set -o errexit
+#set -o errexit
 
 # Initial setup
 mix deps.get --only prod
