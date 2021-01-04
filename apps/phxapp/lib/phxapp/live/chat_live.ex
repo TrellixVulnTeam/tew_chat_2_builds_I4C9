@@ -261,7 +261,6 @@ defmodule Phxapp.ChatLive do
   end
 
   def handle_event("chat_tab_clicked", %{"chat_list_id" => chat_list_objects_id }, socket) do
-    IO.inspect "What's going on"
     chat_list_objects = socket.assigns.chat_list_objects
     chat_list_objects_id = String.to_integer(chat_list_objects_id)
 
