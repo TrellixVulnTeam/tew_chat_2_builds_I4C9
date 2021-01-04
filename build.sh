@@ -1,5 +1,5 @@
 
-echo "Building App"
+echo "Hello There! :) - Building App"
 #!/usr/bin/env bash
 # exit on error
 set -o errexit
@@ -16,3 +16,7 @@ mix phx.digest
 cd ../../
 # Build the release and overwrite the existing release directory
 MIX_ENV=prod mix release --overwrite
+
+#Run the scripts to migrate the database
+_build/prod/rel/prod/bin/prod eval "DB.Release.migrate"
+echo "App Built <3"

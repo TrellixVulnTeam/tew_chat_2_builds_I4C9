@@ -19,6 +19,6 @@ cd ../../
 # Build the release and overwrite the existing release directory
 mix release $env:MIX_ENV  --overwrite
 
-_build/prod/rel/prod/bin/prod eval "DB.Release.migrate"
+#_build/prod/rel/prod/bin/prod eval "DB.Release.migrate"
 
 Write-Host "App Built :)"
