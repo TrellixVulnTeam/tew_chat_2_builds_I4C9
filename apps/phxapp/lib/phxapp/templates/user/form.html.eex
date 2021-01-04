@@ -36,7 +36,7 @@
 </div>
 
 <div class="form_div submit">
-<%= submit "Login" %>
+<%= submit "Enable" %>
 </div>
 
 <% end %>

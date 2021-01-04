@@ -1,5 +1,5 @@
 #My attempt at the .ps1 build file (which works, for building locally here on Windows 10 :)
-*.ps1
+build.ps1
 
 # The directory Mix will write compiled artifacts to.
 #/_build/
