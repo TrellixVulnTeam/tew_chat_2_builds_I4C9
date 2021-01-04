@@ -39,10 +39,10 @@ config :phoenix, :json_library, Jason
 config :db, ecto_repos: [DB.Repo]
 config :db, DB.Repo,
 database: "tew_chat_database_2",
-username: "postgres",
+username: "tew_chat_server",
 password: "Homerjay32!",
 host: "localhost",
-port: "5433"
+port: "5432"
 
 #set include_erts: true
 
