@@ -18,10 +18,6 @@ config :phxapp, Phxapp.Endpoint,
 
 
 
-
-
-
-
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key
