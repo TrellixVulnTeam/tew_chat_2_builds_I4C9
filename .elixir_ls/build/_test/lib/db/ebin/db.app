@@ -4,9 +4,9 @@
               {description,"db"},
               {modules,['Elixir.DB.Chats','Elixir.DB.Interface',
                         'Elixir.DB.Messages','Elixir.DB.Password',
-                        'Elixir.DB.Repo','Elixir.DB.Users',
-                        'Elixir.DB.Users_Chats','Elixir.DB.Users_Contacts',
-                        'Elixir.Db.Application']},
+                        'Elixir.DB.Release','Elixir.DB.Repo',
+                        'Elixir.DB.Users','Elixir.DB.Users_Chats',
+                        'Elixir.DB.Users_Contacts','Elixir.Db.Application']},
               {registered,[]},
               {vsn,"0.1.0"},
               {mod,{'Elixir.Db.Application',[]}}]}.
