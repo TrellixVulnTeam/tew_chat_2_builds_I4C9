@@ -38,7 +38,7 @@ config :phoenix, :json_library, Jason
 
 config :db, ecto_repos: [DB.Repo]
 config :db, DB.Repo,
-database: "tew_chat_database_2",
+database: "tew_chat_database_1",
 username: "tew_chat_server",
 password: "Homerjay32!",
 host: "localhost",
