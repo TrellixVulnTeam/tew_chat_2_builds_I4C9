@@ -44,6 +44,8 @@ password: "Homerjay32!",
 host: "localhost",
 port: "5433"
 
+#set include_erts: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

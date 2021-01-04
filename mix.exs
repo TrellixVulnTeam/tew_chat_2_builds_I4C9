@@ -6,7 +6,18 @@ defmodule TewChat2.MixProject do
       apps_path: "apps",
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      version: "0.1.0",
+      elixir: "~> 1.9",
+      releases: [
+        #Used to be tew_chat_2:, now it's prod:
+        prod: [
+          applications: [
+            db: :permanent,
+            phxapp: :permanent
+          ]
+        ]
+      ]
     ]
   end
   #Hey

@@ -1,6 +1,12 @@
 /* This file is for your main application css. */
 //@import "./phoenix.css";
 @import "../node_modules/nprogress/nprogress.css";
+@font-face{
+  font-family: Lobster;
+  src: url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
 
 //// My Alterations
 
@@ -39,6 +45,8 @@
 
 
 }
+
+
 
 
 
@@ -503,11 +511,17 @@ input[type=search] {
 }
 
 .index_inner_wrapper > h1 > a{
-  font-size: 9rem;
+  font-family: Lobster;
+  font-size: 10rem;
   text-shadow: 0 0 2px lightskyblue;
   color: white;
   font-style: italic;
 }
+
+.index_inner_wrapper > h1 > a:hover{
+  text-shadow: 0 0 5px lightskyblue;
+}
+
 
 .by_me {
   display: flex;
