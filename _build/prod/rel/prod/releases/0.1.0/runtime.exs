@@ -29,7 +29,7 @@ config :phxapp, Phxapp.Endpoint,
 
 ### Database Config for Render.com
 
-
+#This info comes from https://devato.com/post/deploy-phoenix-app-to-render-com
 database_url =
   System.get_env("DATABASE_URL") ||
     raise """
@@ -41,6 +41,7 @@ database_url =
  # ssl: true,
   url: database_url,
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "50")
+########################################################################
 
 
 

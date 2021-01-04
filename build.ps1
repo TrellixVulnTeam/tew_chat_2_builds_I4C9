@@ -1,5 +1,5 @@
 
-Write-Host "Building App"
+Write-Host "Hello There!"
 #!/usr/bin/env bash
 # exit on error
 #set -o errexit
@@ -18,4 +18,7 @@ mix phx.digest
 cd ../../
 # Build the release and overwrite the existing release directory
 mix release $env:MIX_ENV  --overwrite
-Write-Host "Hello There :)"
+
+##_build/prod/rel/prod/bin/prod eval "Render.Release.migrate"
+
+Write-Host "App Built :)"
